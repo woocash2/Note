@@ -1,0 +1,317 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/mainLayout"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".NoteActivity">
+
+    <com.note.DocumentView
+        android:id="@+id/documentView"
+        android:layout_width="600dp"
+        android:layout_height="1000dp"
+        app:layout_constraintTop_toBottomOf="@id/menuBar"/>
+
+    <com.note.DocumentCoverView
+        android:id="@+id/documentCover"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        app:layout_constraintTop_toBottomOf="@id/menuBar" />
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/menuBar"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:background="@drawable/tools_bar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/moveButton"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/button_design"
+            android:backgroundTint="#ffffff"
+            android:text="+"
+            android:textSize="20dp"
+            android:onClick="moveSelect"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/textButton"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/button_design"
+            android:backgroundTint="#ffffff"
+            android:text="T"
+            android:onClick="textSelect"
+            app:layout_constraintStart_toEndOf="@id/moveButton"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/penButton"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/button_design"
+            android:src="@drawable/pen"
+            android:backgroundTint="#ffffff"
+            android:onClick="showHidePenPalette"
+            app:layout_constraintStart_toEndOf="@+id/textButton"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/eraserButton"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/button_design"
+            android:src="@drawable/eraser"
+            android:backgroundTint="#ffffff"
+            android:onClick="eraserSelect"
+            app:layout_constraintStart_toEndOf="@+id/penButton"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/colorButton"
+            android:onClick="showHideColorPalette"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/button_design"
+            android:backgroundTint="#000000"
+            app:layout_constraintStart_toEndOf="@+id/eraserButton"
+            app:layout_constraintTop_toTopOf="parent" />
+
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/sizeButton"
+            android:onClick="showHideSizePalette"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/button_design"
+            android:backgroundTint="#ffffff"
+            android:text="10"
+            app:layout_constraintStart_toEndOf="@+id/colorButton"
+            app:layout_constraintTop_toTopOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/colorPalette"
+        android:visibility="invisible"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        app:layout_constraintTop_toBottomOf="@+id/menuBar"
+        tools:layout_editor_absoluteX="0dp"
+        android:background="@color/lightgray">
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/color1"
+            android:onClick="colorSelect"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/button_design"
+            android:backgroundTint="@color/black"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/color2"
+            android:onClick="colorSelect"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/button_design"
+            android:backgroundTint="@color/red"
+            app:layout_constraintStart_toEndOf="@+id/color1"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/color3"
+            android:onClick="colorSelect"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/button_design"
+            android:backgroundTint="@color/blue"
+            app:layout_constraintStart_toEndOf="@+id/color2"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/color4"
+            android:onClick="colorSelect"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/button_design"
+            android:backgroundTint="@color/green"
+            app:layout_constraintStart_toEndOf="@+id/color3"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/color5"
+            android:onClick="colorSelect"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="64dp"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/button_design"
+            android:backgroundTint="@color/yellow"
+            app:layout_constraintStart_toEndOf="@+id/color3"
+            app:layout_constraintTop_toTopOf="parent" />
+
+
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/sizePallete"
+        android:visibility="invisible"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        app:layout_constraintTop_toBottomOf="@+id/menuBar"
+        tools:layout_editor_absoluteX="0dp"
+        android:background="@color/lightgray">
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/size1"
+            android:text="8"
+            android:onClick="sizeSelect"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/button_design"
+            android:backgroundTint="@color/white"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/size2"
+            android:text="10"
+            android:onClick="sizeSelect"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/button_design"
+            android:backgroundTint="@color/white"
+            app:layout_constraintStart_toEndOf="@+id/size1"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/size3"
+            android:text="14"
+            android:onClick="sizeSelect"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/button_design"
+            android:backgroundTint="@color/white"
+            app:layout_constraintStart_toEndOf="@+id/size2"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/size4"
+            android:text="18"
+            android:onClick="sizeSelect"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/button_design"
+            android:backgroundTint="@color/white"
+            app:layout_constraintStart_toEndOf="@+id/size3"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/size5"
+            android:text="24"
+            android:onClick="sizeSelect"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/button_design"
+            android:backgroundTint="@color/white"
+            app:layout_constraintStart_toEndOf="@+id/size4"
+            app:layout_constraintTop_toTopOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/penPalette"
+        android:visibility="invisible"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        app:layout_constraintTop_toBottomOf="@+id/menuBar"
+        tools:layout_editor_absoluteX="0dp"
+        android:background="@color/lightgray">
+
+
+        <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/pen"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginStart="16dp"
+            android:src="@drawable/pen"
+            android:background="@drawable/button_design"
+            android:backgroundTint="@color/white"
+            android:onClick="penSelect"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/marker"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginStart="16dp"
+            android:src="@drawable/marker"
+            android:background="@drawable/button_design"
+            android:backgroundTint="@color/white"
+            android:onClick="penSelect"
+            android:text="M"
+            app:layout_constraintStart_toEndOf="@id/pen"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/highlighter"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginTop="16dp"
+            android:src="@drawable/highlighter"
+            android:layout_marginStart="16dp"
+            android:background="@drawable/button_design"
+            android:backgroundTint="@color/white"
+            android:onClick="penSelect"
+            android:text="H"
+            app:layout_constraintStart_toEndOf="@id/marker"
+            app:layout_constraintTop_toTopOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
