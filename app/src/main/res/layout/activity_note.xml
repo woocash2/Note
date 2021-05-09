@@ -108,6 +108,20 @@
             app:layout_constraintStart_toEndOf="@+id/colorButton"
             app:layout_constraintTop_toTopOf="parent" />
 
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/undoButton"
+            android:visibility="invisible"
+            android:onClick="undoMove"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/button_design"
+            android:backgroundTint="#ffffff"
+            android:text="U"
+            app:layout_constraintStart_toEndOf="@+id/sizeButton"
+            app:layout_constraintTop_toTopOf="parent" />
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <androidx.constraintlayout.widget.ConstraintLayout

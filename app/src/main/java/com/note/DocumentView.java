@@ -15,6 +15,7 @@ import android.view.View;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
 import java.util.ArrayList;
+import java.util.Stack;
 
 public class DocumentView extends View {
     
@@ -40,6 +41,7 @@ public class DocumentView extends View {
 
     private TextFieldManager textFieldManager;
     private DocumentCoverView coverView;
+    public Stack<Object> recent = new Stack<>();
 
     public DocumentView(Context context) {
         this(context, null);
@@ -71,6 +73,7 @@ public class DocumentView extends View {
         path.alpha = alpha;
         path.strokeMultiplier = strokeMultiplier;
         paths.add(path);
+        recent.push(path);
         path.path.reset();
         path.path.moveTo(a, b);
         x = a;
@@ -179,6 +182,31 @@ public class DocumentView extends View {
             draw(canvas);
         }
         return true;
+    }
+
+    public void removeRecent() {
+        if (recent.empty())
+            return;
+
+        Object view;
+
+        while (true) {
+            view = recent.pop();
+            if (recent.empty())
+                return;
+            if (paths.contains((FingerPath) view) || textFieldManager.texts.contains((TextWithRealCoords)view))
+                break;
+        }
+
+        if (view.getClass().equals(FingerPath.class)) {
+            paths.remove(view);
+            invalidate();
+            draw(canvas);
+        }
+        else {
+            textFieldManager.removeText((TextWithRealCoords) view);
+        }
+        recalculateMaxXY();
     }
 
     @Override

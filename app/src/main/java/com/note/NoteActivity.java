@@ -180,4 +180,8 @@ public class NoteActivity extends AppCompatActivity {
         textFieldManager.textSize = documentView.strokeWidth * 2f;
         hidePalettes(view);
     }
+
+    public void undoMove(View view) {
+        documentView.removeRecent();
+    }
 }

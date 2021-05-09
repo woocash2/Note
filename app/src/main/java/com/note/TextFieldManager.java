@@ -18,7 +18,7 @@ public class TextFieldManager {
     public int color = Color.BLACK;
 
     private ConstraintLayout mainLayout;
-    private ArrayList<TextWithRealCoords> texts = new ArrayList<>();
+    public ArrayList<TextWithRealCoords> texts = new ArrayList<>();
 
     private float initialTextTranslationX = 20f;
     private float initialTextTranslationY = 50f;
@@ -40,6 +40,7 @@ public class TextFieldManager {
 
         TextWithRealCoords twrc = new TextWithRealCoords(text, realA, realB);
         texts.add(twrc);
+        documentView.recent.push(twrc);
 
         text.requestFocus();
         ((InputMethodManager) text.getContext().getSystemService(Context.INPUT_METHOD_SERVICE)).
@@ -72,5 +73,10 @@ public class TextFieldManager {
             maxY = Math.max((int)twrc.realY, maxY);
         }
         return new Pair<>(maxX, maxY);
+    }
+
+    public void removeText(TextWithRealCoords text) {
+        texts.remove(text);
+        mainLayout.removeView(text.text);
     }
 }
