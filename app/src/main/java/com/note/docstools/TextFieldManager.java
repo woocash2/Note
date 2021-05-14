@@ -1,18 +1,21 @@
-package com.note;
+package com.note.docstools;
 
 import android.content.Context;
 import android.graphics.Color;
-import android.net.sip.SipSession;
+import android.util.Log;
 import android.util.Pair;
-import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 
 import androidx.constraintlayout.widget.ConstraintLayout;
 
+import com.note.docstools.util.TextWithRealCoords;
+
+import java.io.Serializable;
+import java.nio.channels.FileLock;
 import java.util.ArrayList;
 
-public class TextFieldManager {
+public class TextFieldManager implements Serializable {
 
     public float textSize = 20f;
     public int color = Color.BLACK;
@@ -36,9 +39,10 @@ public class TextFieldManager {
         text.setX(a - initialTextTranslationX);
         text.setY(b - initialTextTranslationY);
         text.setTextSize(textSize);
+        Log.d("TRUE TEXT SIZE", Float.toString(textSize) + " " + Float.toString( text.getTextSize()));
         text.setTextColor(color);
 
-        TextWithRealCoords twrc = new TextWithRealCoords(text, realA, realB);
+        TextWithRealCoords twrc = new TextWithRealCoords(text, realA, realB, textSize);
         texts.add(twrc);
         documentView.recent.push(twrc);
 
@@ -78,5 +82,12 @@ public class TextFieldManager {
     public void removeText(TextWithRealCoords text) {
         texts.remove(text);
         mainLayout.removeView(text.text);
+    }
+
+    public void refresh() {
+        for (TextWithRealCoords twrc : texts) {
+            mainLayout.removeView(twrc.text);
+            mainLayout.addView(twrc.text, 2);
+        }
     }
 }

@@ -1,12 +1,13 @@
-package com.note;
+package com.note.docstools.util;
 
 import android.graphics.Path;
 import android.graphics.Point;
 import android.util.Pair;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
-public class FingerPath {
+public class FingerPath implements Serializable {
     public int color;
     public int strokeWidth;
     public Path path;

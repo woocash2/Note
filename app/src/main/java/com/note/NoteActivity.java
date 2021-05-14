@@ -5,15 +5,28 @@ import androidx.appcompat.widget.AppCompatButton;
 import androidx.appcompat.widget.AppCompatImageButton;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
-import android.graphics.Color;
 import android.graphics.Point;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
-import java.util.Map;
+import com.note.docstools.DocumentInfo;
+import com.note.docstools.DocumentCoverView;
+import com.note.docstools.DocumentView;
+import com.note.docstools.TextFieldManager;
+import com.note.docstools.util.Serializer;
+
+import org.bson.Document;
+
 import java.util.TreeMap;
+
+import io.realm.mongodb.App;
+import io.realm.mongodb.User;
+import io.realm.mongodb.mongo.MongoClient;
+import io.realm.mongodb.mongo.MongoCollection;
+import io.realm.mongodb.mongo.MongoDatabase;
 
 public class NoteActivity extends AppCompatActivity {
 
@@ -21,6 +34,7 @@ public class NoteActivity extends AppCompatActivity {
     public int[] strokeMultipliers = {1, 2, 4};
     public int[] penAlphas = {255, 153, 63};
     public static State state = State.MOVE;
+    public static int barHeight;
 
     private ConstraintLayout mainLayout;
 
@@ -41,7 +55,6 @@ public class NoteActivity extends AppCompatActivity {
         setContentView(R.layout.activity_note);
 
         mainLayout = findViewById(R.id.mainLayout);
-
         documentView = findViewById(R.id.documentView);
         textFieldManager = new TextFieldManager(mainLayout, documentView);
         DisplayMetrics displayMetrics = new DisplayMetrics();
@@ -56,6 +69,7 @@ public class NoteActivity extends AppCompatActivity {
         documentCover.init(winsize, textFieldManager);
 
         menuBar = findViewById(R.id.menuBar);
+        barHeight = menuBar.getLayoutParams().height;
         colorPalette = findViewById(R.id.colorPalette);
         sizePalette = findViewById(R.id.sizePallete);
         penPalette = findViewById(R.id.penPalette);
@@ -70,6 +84,15 @@ public class NoteActivity extends AppCompatActivity {
         state = State.MOVE;
         mainButtons.get("moveButton").setScaleX(1.2f);
         mainButtons.get("moveButton").setScaleY(1.2f);
+
+        if (!MenuActivity.serialized.equals("")) {
+            DocumentInfo dinfo = Serializer.deserializeDocument(MenuActivity.serialized);
+            Serializer.injectDataToDocument(documentView, textFieldManager, dinfo, this);
+        }
+        else {
+            String serialized = Serializer.serializeDocument(MenuActivity.workDocName, documentView, documentCover, textFieldManager, false);
+            saveDocument(MainActivity.app, MenuActivity.workDocName, serialized, true);
+        }
     }
 
     public void showHideColorPalette(View view) {
@@ -183,5 +206,50 @@ public class NoteActivity extends AppCompatActivity {
 
     public void undoMove(View view) {
         documentView.removeRecent();
+    }
+
+    @Override
+    public void onBackPressed() {
+        String serialized = Serializer.serializeDocument(MenuActivity.workDocName, documentView, documentCover, textFieldManager, true);
+        saveDocument(MainActivity.app, MenuActivity.workDocName, serialized, false);
+    }
+
+    public void quitActivity() {
+        super.onBackPressed();
+    }
+
+    public void saveDocument(App app, String documentName, String serialized, boolean createNew) {
+        User appUser = app.currentUser();
+        MongoClient mongoClient = appUser.getMongoClient("mongodb-atlas");
+        MongoDatabase db = mongoClient.getDatabase("NoteDatabase");
+        MongoCollection<Document> collection = db.getCollection("NoteCollection");
+
+        Document userDoc = new Document("userid", appUser.getId());
+        userDoc.append("name", documentName);
+        userDoc.append("document", serialized);
+
+        if (!createNew) {
+            Document filter = new Document("userid", appUser.getId());
+            filter.append("name", documentName);
+
+            collection.findOneAndReplace(filter, userDoc).getAsync(task -> {
+                if (task.isSuccess()) {
+                    Log.d("INSERT DOCUMENT", appUser.getId() + " " + documentName);
+                } else {
+                    Log.d("INSERT DOCUMENT", task.getError().toString());
+                }
+                if (!createNew)
+                    quitActivity();
+            });
+        }
+        else {
+            collection.insertOne(userDoc).getAsync(task -> {
+                if (task.isSuccess()) {
+                    Log.d("INSERT DOCUMENT", appUser.getId() + " " + documentName);
+                } else {
+                    Log.d("INSERT DOCUMENT", task.getError().toString());
+                }
+            });
+        }
     }
 }

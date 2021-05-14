@@ -1,14 +1,19 @@
-package com.note;
+package com.note.docstools;
 
 import android.content.Context;
 import android.graphics.Point;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
 import androidx.constraintlayout.widget.ConstraintLayout;
 
-public class DocumentCoverView extends View implements PathView {
+import com.note.NoteActivity;
+
+import java.io.Serializable;
+
+public class DocumentCoverView extends View implements Serializable {
 
     public float displacementX = 0f;
     public float displacementY = 0f;
@@ -43,13 +48,11 @@ public class DocumentCoverView extends View implements PathView {
         textFieldManager = manager;
     }
 
-    @Override
     public void pathStart(float a, float b) {
         srcX = a;
         srcY = b;
     }
 
-    @Override
     public void pathMove(float a, float b) {
         displacementX = a - srcX;
         displacementY = b - srcY;
@@ -57,9 +60,6 @@ public class DocumentCoverView extends View implements PathView {
         srcY = b;
         displaceDocument();
     }
-
-    @Override
-    public void pathUp() {}
 
     public void displaceDocument() {
 
@@ -90,8 +90,6 @@ public class DocumentCoverView extends View implements PathView {
                 pathStart(a, b);
             else if (event.getAction() == MotionEvent.ACTION_MOVE)
                 pathMove(a, b);
-            else if (event.getAction() == MotionEvent.ACTION_UP)
-                pathUp();
             invalidate();
         }
         return true;

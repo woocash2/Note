@@ -1,4 +1,4 @@
-package com.note;
+package com.note.docstools;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -8,16 +8,22 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.util.Pair;
 import android.view.MotionEvent;
 import android.view.View;
 
 import androidx.constraintlayout.widget.ConstraintLayout;
 
+import com.note.NoteActivity;
+import com.note.docstools.util.FingerPath;
+import com.note.docstools.util.TextWithRealCoords;
+
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Stack;
 
-public class DocumentView extends View {
+public class DocumentView extends View implements Serializable {
     
     float x, y;
     public FingerPath path;
@@ -29,9 +35,9 @@ public class DocumentView extends View {
 
     public ArrayList<FingerPath> paths = new ArrayList<>();
 
-    private Bitmap bitmap;
+    public Bitmap bitmap;
     private Paint bitmapPaint = new Paint(Paint.DITHER_FLAG);
-    private Canvas canvas;
+    public Canvas canvas;
 
     private int preferredDistToEdge = 1200;
     private int maxPointX = 0;
@@ -96,6 +102,7 @@ public class DocumentView extends View {
         path.path.lineTo(x, y);
         path.points.add(new Pair<>(x, y));
         reshapeDocument();
+        Log.d("PATH NUMBER", Integer.toString(paths.size()));
     }
 
     public void strokeEraserTouch(float a, float b) {
