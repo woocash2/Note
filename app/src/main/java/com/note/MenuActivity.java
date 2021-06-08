@@ -3,9 +3,17 @@ package com.note;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
+import android.Manifest;
 import android.app.Dialog;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -21,6 +29,7 @@ import com.note.docstools.util.Serializer;
 
 import org.bson.Document;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 
 import io.realm.mongodb.App;
@@ -33,19 +42,54 @@ import io.realm.mongodb.mongo.iterable.MongoCursor;
 
 public class MenuActivity extends AppCompatActivity {
 
+    public static final int REQUEST_ENABLE_BT = 1;
+
     ListView listView;
+    ListView devicesListView;
+    ArrayList<BluetoothDevice> devices = new ArrayList<>();
+    ArrayList<String> deviceNames = new ArrayList<>();
+    BluetoothDevice bluetoothDevice;
+    BluetoothService bluetoothService;
+    private boolean sending = false;
+    private MenuActivity menu = this;
+
     public static String workDocName = "";
     public static String serialized = "";
+    public static boolean newlyCreated = false;
     public ArrayList<Document> documents = new ArrayList<>();
     public ArrayList<String> docNames = new ArrayList<>();
+    private BluetoothAdapter bluetoothAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_menu);
         listView = findViewById(R.id.listview);
+
         serialized = "";
         workDocName = "siema";
+        newlyCreated = false;
+
+        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+
+        AppCompatButton bluetoothReceive = findViewById(R.id.bluetoothReceiveButton);
+        bluetoothReceive.setOnClickListener(e -> {
+            bluetoothAction(false);
+        });
+        bluetoothService = new BluetoothService(bluetoothAdapter, getApplicationContext());
+        LocalBroadcastManager.getInstance(this).registerReceiver(messageReceiver, new IntentFilter("message"));
+
+        IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
+        registerReceiver(btEnableReceiver, filter);
+
+        IntentFilter filter1 = new IntentFilter(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+        registerReceiver(enDiscoverableReceiver, filter1);
+
+        IntentFilter filter2 = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+        registerReceiver(discoveringReceiver, filter2);
+
+        IntentFilter filter3 = new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
+        registerReceiver(bondReceiver, filter3);
     }
 
     @Override
@@ -60,6 +104,7 @@ public class MenuActivity extends AppCompatActivity {
         if (!docName.equals("") && !docNames.contains(docName)) {
             workDocName = docName;
             serialized =  "";
+            newlyCreated = true;
             openNote();
         }
         else {
@@ -92,17 +137,19 @@ public class MenuActivity extends AppCompatActivity {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 workDocName = docNames.get(position);
                 serialized = documents.get(position).get("document").toString();
+                newlyCreated = false;
                 showPopupMenu();
-                //openNote();
             }
         });
     }
 
     public void showPopupMenu() {
+
         AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(this);
         final View contactPopupView = getLayoutInflater().inflate(R.layout.popup, null);
         AppCompatButton open = contactPopupView.findViewById(R.id.openButton);
         AppCompatButton download = contactPopupView.findViewById(R.id.downloadButton);
+        AppCompatButton bluetoothShare = contactPopupView.findViewById(R.id.bluetoothShareButton);
         AppCompatButton delete = contactPopupView.findViewById(R.id.deleteButton);
         AppCompatButton back = contactPopupView.findViewById(R.id.backButton);
 
@@ -119,6 +166,9 @@ public class MenuActivity extends AppCompatActivity {
             DocumentInfo documentInfo = Serializer.deserializeDocument(serialized);
             JPEGConverter.saveAsJPEG(documentInfo, workDocName, getApplicationContext());
             dialog.dismiss();
+        });
+        bluetoothShare.setOnClickListener(e -> {
+            bluetoothAction(true);
         });
         delete.setOnClickListener(e -> {
             deleteDocument(MainActivity.app, workDocName);
@@ -167,5 +217,207 @@ public class MenuActivity extends AppCompatActivity {
             }
             readDocuments(app);
         });
+    }
+
+    // BLUETOOTH
+
+    public void bluetoothAction(boolean send) {
+        sending = send;
+        if (bluetoothAdapter != null && bluetoothAdapter.isEnabled()) {
+
+            if (bluetoothAdapter.getScanMode() != BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE) {
+                enableDiscoverable();
+                return;
+            }
+
+            deviceNames.clear();
+            devices.clear();
+            showPopupBluetooth();
+            bluetoothDiscover();
+        }
+        else
+            enableBluetooth();
+    }
+
+    private final BroadcastReceiver messageReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String message = intent.getStringExtra("theMessage");
+            DocumentInfo info = Serializer.deserializeDocument(message);
+            if (!docNames.contains(info.name)) {
+                workDocName = info.name;
+                serialized = message;
+                newlyCreated = true;
+                openNote();
+            }
+            else {
+                Toast.makeText(getApplicationContext(), "Already exists", Toast.LENGTH_SHORT).show();
+            }
+        }
+    };
+
+    private final BroadcastReceiver btEnableReceiver = new BroadcastReceiver() {
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            Log.d("BLUETOOTH", "onReceive: " + action);
+            if (BluetoothAdapter.ACTION_STATE_CHANGED.equals(action)) {
+                if (intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR) == BluetoothAdapter.STATE_ON) {
+                    Log.d("BLUETOOTH", "enabled bt");
+                    enableDiscoverable();
+                }
+            }
+        }
+    };
+
+    private final BroadcastReceiver enDiscoverableReceiver = new BroadcastReceiver() {
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE.equals(action)) {
+                Log.d("BLUETOOTH", "enabled discoverable");
+                Toast.makeText(getApplicationContext(), "Enabled Bluetooth. Click again", Toast.LENGTH_SHORT).show();
+            }
+        }
+    };
+
+    private final BroadcastReceiver discoveringReceiver = new BroadcastReceiver() {
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+
+            if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                String deviceName = device.getName();
+                String deviceHardwareAddress = device.getAddress(); // MAC address
+                Log.d("BLUETOOTH", "discovered " + deviceName);
+
+                if (device != null && deviceName != null) {
+                    devices.add(device);
+                    deviceNames.add(deviceName);
+                }
+                ArrayAdapter<String> adapter = new ArrayAdapter<>(getApplicationContext(), R.layout.text_item, deviceNames);
+                devicesListView.setAdapter(adapter);
+
+                devicesListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                    @Override
+                    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                        bluetoothPair(devices.get(position));
+                    }
+                });
+            }
+        }
+    };
+
+    private final BroadcastReceiver bondReceiver = new BroadcastReceiver() {
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+
+            if (BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(action)) {
+                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                String deviceName = device.getName();
+                if (device.getBondState() == BluetoothDevice.BOND_BONDED) {
+                    Log.d("BLUETOOTH", "bonded " + deviceName);
+                    if (!sending)
+                        startWorkingAsClient(device);
+                    else
+                        startWorkingAsServer();
+                }
+                if (device.getBondState() == BluetoothDevice.BOND_BONDING) {
+                    Log.d("BLUETOOTH", "bonding " + deviceName);
+                }
+                if (device.getBondState() == BluetoothDevice.BOND_BONDING) {
+                    Log.d("BLUETOOTH", "bond broken " + deviceName);
+                }
+            }
+        }
+    };
+
+    public void enableBluetooth() {
+        if (bluetoothAdapter == null) {
+            Log.d("BLUETOOTH", "Device doesn't support bluetooth.");
+            return;
+        }
+
+        if (!bluetoothAdapter.isEnabled()) {
+            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivity(enableBtIntent);
+        }
+    }
+
+    public void enableDiscoverable() {
+        Log.d("BLUETOOTH", "enable Discoverable");
+        Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+        discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 60);
+
+        startActivity(discoverableIntent);
+    }
+
+    public void bluetoothDiscover() {
+
+        Log.d("BLUETOOTH", "bluetooth Discover");
+        if (bluetoothAdapter.isDiscovering()) {
+            bluetoothAdapter.cancelDiscovery();
+        }
+
+        checkBTPermissions();
+        bluetoothAdapter.startDiscovery();
+    }
+
+    private void checkBTPermissions() {
+        if(Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP){
+            int permissionCheck = this.checkSelfPermission("Manifest.permission.ACCESS_FINE_LOCATION");
+            permissionCheck += this.checkSelfPermission("Manifest.permission.ACCESS_COARSE_LOCATION");
+            if (permissionCheck != 0) {
+
+                this.requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, 1001); //Any number
+            }
+        }else{
+            Log.d("BLUETOOTH", "checkBTPermissions: No need to check permissions. SDK version < LOLLIPOP.");
+        }
+    }
+
+    public void bluetoothPair(BluetoothDevice device) {
+        if (device.getBondState() == BluetoothDevice.BOND_BONDED) {
+            if (!sending)
+                startWorkingAsClient(device);
+            else
+                startWorkingAsServer();
+            return;
+        }
+        device.createBond();
+        Log.d("BLUETOOTH", "bluetooth paired with " + device.getName());
+    }
+
+    public void showPopupBluetooth() {
+        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(this);
+        final View contactPopupView = getLayoutInflater().inflate(R.layout.bt_devices_popup, null);
+        devicesListView = contactPopupView.findViewById(R.id.btlistview);
+
+        dialogBuilder.setView(contactPopupView);
+        Dialog dialog = dialogBuilder.create();
+        dialog.show();
+    }
+
+    public void startWorkingAsServer() {
+        //bluetoothService.cancelAll();
+        bluetoothService.startServer();
+    }
+
+    public void startWorkingAsClient(BluetoothDevice device) {
+        //bluetoothService.cancelAll();
+        bluetoothService.startClient(device, bluetoothService.MY_UUID);
+    }
+
+    public void sendDocument(BluetoothDevice device) {
+        byte[] bytes = serialized.getBytes(Charset.defaultCharset());
+        bluetoothService.write(bytes);
+    }
+
+    @Override
+    protected void onDestroy() {
+        unregisterReceiver(enDiscoverableReceiver);
+        unregisterReceiver(discoveringReceiver);
+        unregisterReceiver(btEnableReceiver);
+        unregisterReceiver(bondReceiver);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(messageReceiver);
+        super.onDestroy();
     }
 }

@@ -85,13 +85,13 @@ public class NoteActivity extends AppCompatActivity {
         mainButtons.get("moveButton").setScaleX(1.2f);
         mainButtons.get("moveButton").setScaleY(1.2f);
 
+        if (MenuActivity.newlyCreated) {
+            String serialized = Serializer.serializeDocument(MenuActivity.workDocName, documentView, documentCover, textFieldManager, false);
+            saveDocument(MainActivity.app, MenuActivity.workDocName, serialized, true);
+        }
         if (!MenuActivity.serialized.equals("")) {
             DocumentInfo dinfo = Serializer.deserializeDocument(MenuActivity.serialized);
             Serializer.injectDataToDocument(documentView, textFieldManager, dinfo, this);
-        }
-        else {
-            String serialized = Serializer.serializeDocument(MenuActivity.workDocName, documentView, documentCover, textFieldManager, false);
-            saveDocument(MainActivity.app, MenuActivity.workDocName, serialized, true);
         }
     }
 

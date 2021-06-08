@@ -30,7 +30,7 @@
         android:text="Download"/>
 
     <androidx.appcompat.widget.AppCompatButton
-        android:id="@+id/deleteButton"
+        android:id="@+id/bluetoothShareButton"
         android:layout_width="200dp"
         android:layout_height="50dp"
         android:layout_marginTop="10dp"
@@ -38,6 +38,17 @@
         app:layout_constraintHorizontal_bias="0.497"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/downloadButton"
+        android:text="bluetooth share"/>
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/deleteButton"
+        android:layout_width="200dp"
+        android:layout_height="50dp"
+        android:layout_marginTop="10dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.497"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/bluetoothShareButton"
         android:text="Delete"/>
 
     <androidx.appcompat.widget.AppCompatButton
