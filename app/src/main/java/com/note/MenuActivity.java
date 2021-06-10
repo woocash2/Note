@@ -1,5 +1,7 @@
 package com.note;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
@@ -23,6 +25,18 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.api.Scope;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.api.client.extensions.android.http.AndroidHttp;
+import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
+import com.google.api.client.json.gson.GsonFactory;
+import com.google.api.services.drive.Drive;
+import com.google.api.services.drive.DriveScopes;
 import com.note.docstools.DocumentInfo;
 import com.note.docstools.util.JPEGConverter;
 import com.note.docstools.util.Serializer;
@@ -31,6 +45,7 @@ import org.bson.Document;
 
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Collections;
 
 import io.realm.mongodb.App;
 import io.realm.mongodb.RealmResultTask;
@@ -59,6 +74,8 @@ public class MenuActivity extends AppCompatActivity {
     public ArrayList<Document> documents = new ArrayList<>();
     public ArrayList<String> docNames = new ArrayList<>();
     private BluetoothAdapter bluetoothAdapter;
+
+    private DriveUploader driveUploader;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -150,6 +167,7 @@ public class MenuActivity extends AppCompatActivity {
         AppCompatButton open = contactPopupView.findViewById(R.id.openButton);
         AppCompatButton download = contactPopupView.findViewById(R.id.downloadButton);
         AppCompatButton bluetoothShare = contactPopupView.findViewById(R.id.bluetoothShareButton);
+        AppCompatButton driveUpload = contactPopupView.findViewById(R.id.driveUploadButton);
         AppCompatButton delete = contactPopupView.findViewById(R.id.deleteButton);
         AppCompatButton back = contactPopupView.findViewById(R.id.backButton);
 
@@ -169,6 +187,9 @@ public class MenuActivity extends AppCompatActivity {
         });
         bluetoothShare.setOnClickListener(e -> {
             bluetoothAction(true);
+        });
+        driveUpload.setOnClickListener(e -> {
+            requestSignIn();
         });
         delete.setOnClickListener(e -> {
             deleteDocument(MainActivity.app, workDocName);
@@ -419,5 +440,72 @@ public class MenuActivity extends AppCompatActivity {
         unregisterReceiver(bondReceiver);
         LocalBroadcastManager.getInstance(this).unregisterReceiver(messageReceiver);
         super.onDestroy();
+    }
+
+
+    // GOOGLE DRIVE
+
+
+
+    public void requestSignIn() {
+        GoogleSignInOptions signInOptions = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestEmail().requestScopes(new Scope(DriveScopes.DRIVE_FILE)).build();
+        GoogleSignInClient client = GoogleSignIn.getClient(this, signInOptions);
+
+        Log.d("DRIVE", "STARTING ACTIVITY FOR RESULT");
+        startActivityForResult(client.getSignInIntent(), 400);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        Log.d("DRIVE", "HANDLING SIGN IN " + requestCode + " " + resultCode);
+
+        if (requestCode == 400) {
+            if (resultCode == RESULT_OK) {
+                handleSignInIntent(data);
+            }
+        }
+
+        super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    private void handleSignInIntent(Intent data) {
+        GoogleSignIn.getSignedInAccountFromIntent(data).addOnSuccessListener(new OnSuccessListener<GoogleSignInAccount>() {
+            @Override
+            public void onSuccess(GoogleSignInAccount googleSignInAccount) {
+                Log.d("DRIVE", "onSuccess: ");
+                // TODO
+                GoogleAccountCredential credential = GoogleAccountCredential.usingOAuth2(getApplicationContext(), Collections.singleton(DriveScopes.DRIVE_FILE));
+                credential.setSelectedAccount(googleSignInAccount.getAccount());
+                Drive driveService = new Drive.Builder(
+                        AndroidHttp.newCompatibleTransport(),
+                        new GsonFactory(),
+                        credential
+                ).setApplicationName("note-app").build();
+
+                driveUploader = new DriveUploader(driveService, getApplicationContext());
+                driveUploader.createFile(workDocName, Serializer.deserializeDocument(serialized))
+                        .addOnSuccessListener(new OnSuccessListener<String>() {
+                                                  @Override
+                                                  public void onSuccess(String s) {
+                                                      Log.d("DRIVE", "Successful upload");
+                                                      Toast.makeText(getApplicationContext(), "Uploaded to drive.", Toast.LENGTH_SHORT).show();
+                                                  }
+                                              }
+                        ).addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.d("DRIVE", "Failed to upload");
+                        e.printStackTrace();
+                        Toast.makeText(getApplicationContext(), "Failed to upload.", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Log.d("DRIVE", "onFailure: ");
+            }
+        });
     }
 }

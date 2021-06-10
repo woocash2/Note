@@ -22,7 +22,7 @@ import java.util.ArrayList;
 
 public interface JPEGConverter {
 
-    public static void saveAsJPEG(DocumentInfo documentInfo, String fileName, Context context) {
+    public static File saveAsJPEG(DocumentInfo documentInfo, String fileName, Context context) {
 
         int height = documentInfo.height;
         int width = documentInfo.width;
@@ -73,8 +73,11 @@ public interface JPEGConverter {
             bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
             fos.close();
 
+            return file;
+
         } catch (IOException e) {
             e.printStackTrace();
         }
+        return null;
     }
 }
