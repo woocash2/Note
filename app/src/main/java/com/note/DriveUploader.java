@@ -29,6 +29,7 @@ public class DriveUploader {
     public Task<String> createFile(String fileName, DocumentInfo documentInfo) {
         return Tasks.call(executor, () -> {
             File file = JPEGConverter.saveAsJPEG(documentInfo, fileName, context);
+            if (file == null) return null;
 
             com.google.api.services.drive.model.File metaData = new com.google.api.services.drive.model.File();
             metaData.setName(fileName);
@@ -44,8 +45,10 @@ public class DriveUploader {
                 e.printStackTrace();
             }
 
-            if (upFile == null)
+            if (upFile == null) {
                 Log.e("DRIVE", "createFile: FILE IS NULL");
+                return null;
+            }
 
             return upFile.getId();
         });

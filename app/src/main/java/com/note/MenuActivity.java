@@ -418,12 +418,10 @@ public class MenuActivity extends AppCompatActivity {
     }
 
     public void startWorkingAsServer() {
-        //bluetoothService.cancelAll();
         bluetoothService.startServer();
     }
 
     public void startWorkingAsClient(BluetoothDevice device) {
-        //bluetoothService.cancelAll();
         bluetoothService.startClient(device, bluetoothService.MY_UUID);
     }
 
